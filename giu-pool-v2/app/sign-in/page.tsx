@@ -12,8 +12,8 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">ID</Label>
-            <Input id="id" type="id" placeholder="Enter your id" />
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" placeholder="Enter your email" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>

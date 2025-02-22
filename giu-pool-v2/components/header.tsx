@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Car } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function Header() {
@@ -7,8 +6,12 @@ export function Header() {
     <header className="border-b">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
-          <Car className="h-6 w-6 text-emerald-400" />
-          <span className="text-xl font-bold">GIU Pool</span>
+          <div className="flex items-center">
+            <span className="text-2xl font-bold">G</span>
+            <span className="text-2xl font-bold text-giu-red">I</span>
+            <span className="text-2xl font-bold text-giu-gold">U</span>
+            <span className="ml-2 hidden text-sm font-medium sm:block">Pool</span>
+          </div>
         </Link>
         <nav className="flex items-center space-x-6">
           <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary">
@@ -23,11 +26,9 @@ export function Header() {
           <Link href="/profile" className="text-sm font-medium text-muted-foreground hover:text-primary">
             Profile
           </Link>
-          <Link href="/sign-in">
-            <Button variant="default" className="bg-emerald-400 hover:bg-emerald-500">
-              Sign In
-            </Button>
-          </Link>
+          <Button variant="default" className="bg-giu-red hover:bg-giu-red/90 text-white">
+            Sign In
+          </Button>
         </nav>
       </div>
     </header>
