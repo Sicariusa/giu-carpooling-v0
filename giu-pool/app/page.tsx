@@ -5,7 +5,7 @@ import Link from "next/link"
 export default function Home() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
-      <section className="flex-1 space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
+      <section className="flex-1 space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-16">
         <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
           <span className="rounded-2xl bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-800">
             GIU Students & Staff Only
@@ -29,7 +29,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="container space-y-6 py-8 md:py-12 lg:py-24">
+      <section className="container space-y-6 py-8 md:py-12 lg:py-16">
         <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem] md:grid-cols-4">
           <div className="relative overflow-hidden rounded-lg border bg-background p-2">
             <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
