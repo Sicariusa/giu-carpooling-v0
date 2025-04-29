@@ -1,7 +1,28 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { FaUserCircle } from "react-icons/fa";
 
 export function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if the user is logged in by checking for a token in sessionStorage
+    const token = sessionStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    // Clear the token from sessionStorage and redirect to the home page
+    sessionStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/");
+  };
+
   return (
     <header className="border-b">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -23,15 +44,35 @@ export function Header() {
           <Link href="/offer" className="text-sm font-medium text-muted-foreground hover:text-primary">
             Offer a Ride
           </Link>
-          <Link href="/profile" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            Profile
-          </Link>
-          <Button variant="default" className="bg-giu-red hover:bg-giu-red/90 text-white">
-            Sign In
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <Link href="/profile" className="text-muted-foreground hover:text-primary">
+                <FaUserCircle size={24} />
+              </Link>
+              <Button
+                variant="default"
+                className="bg-giu-red hover:bg-giu-red/90 text-white"
+                onClick={handleLogout}
+              >
+                Log Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in">
+                <Button variant="default" className="bg-giu-red hover:bg-giu-red/90 text-white">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button variant="default" className="bg-giu-gold hover:bg-giu-gold/90 text-white">
+                  Sign Up
+                </Button>
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
-  )
+  );
 }
-
