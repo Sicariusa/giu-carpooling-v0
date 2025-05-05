@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
-export default function VerifyOtpPage() {
+function VerifyOtpPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -33,7 +33,6 @@ export default function VerifyOtpPage() {
       setError("Please enter a valid 6-digit OTP.");
       return;
     }
-
     try {
       const response = await axios.post("http://localhost:3000/graphql", {
         query: `
@@ -46,14 +45,10 @@ export default function VerifyOtpPage() {
           otp,
         },
       });
-
       const result = response.data;
-
       if (result.data?.verifyOtp) {
         setSuccess("OTP verified successfully! Redirecting to login...");
         setError("");
-
-        // Redirect to the login page after a short delay
         setTimeout(() => {
           router.push("/sign-in");
         }, 2000);
@@ -70,7 +65,6 @@ export default function VerifyOtpPage() {
       setError("Please enter a valid email address to resend OTP.");
       return;
     }
-
     try {
       const response = await axios.post("http://localhost:3000/graphql", {
         query: `
@@ -82,9 +76,7 @@ export default function VerifyOtpPage() {
           email,
         },
       });
-
       const result = response.data;
-
       if (result.data?.sendOtp) {
         setResendSuccess("OTP has been resent to your email.");
         setError("");
@@ -141,5 +133,13 @@ export default function VerifyOtpPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <VerifyOtpPageContent />
+    </Suspense>
   );
 }

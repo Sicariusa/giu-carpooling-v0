@@ -5,21 +5,38 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FaUserCircle } from "react-icons/fa";
+import { useUser } from "@/app/utils/UserContext";
 
 export function Header() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { isLoggedIn, setIsLoggedIn } = useUser();
   const router = useRouter();
 
   useEffect(() => {
     // Check if the user is logged in by checking for a token in sessionStorage
     const token = sessionStorage.getItem("token");
     setIsLoggedIn(!!token);
-  }, []);
+
+    // Listen for custom event to update login state dynamically
+    const handleLoginStatusChange = () => {
+      const updatedToken = sessionStorage.getItem("token");
+      setIsLoggedIn(!!updatedToken);
+    };
+
+    window.addEventListener("userLoginStatusChanged", handleLoginStatusChange);
+
+    return () => {
+      window.removeEventListener("userLoginStatusChanged", handleLoginStatusChange);
+    };
+  }, [setIsLoggedIn]);
 
   const handleLogout = () => {
     // Clear the token from sessionStorage and redirect to the home page
     sessionStorage.removeItem("token");
     setIsLoggedIn(false);
+
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event("userLoginStatusChanged"));
+
     router.push("/");
   };
 
@@ -49,25 +66,24 @@ export function Header() {
               <Link href="/profile" className="text-muted-foreground hover:text-primary">
                 <FaUserCircle size={24} />
               </Link>
-              <Button
-                variant="default"
-                className="bg-giu-red hover:bg-giu-red/90 text-white"
+              <button
+                className="bg-giu-red hover:bg-giu-red/90 text-white px-4 py-2 rounded"
                 onClick={handleLogout}
               >
                 Log Out
-              </Button>
+              </button>
             </>
           ) : (
             <>
               <Link href="/sign-in">
-                <Button variant="default" className="bg-giu-red hover:bg-giu-red/90 text-white">
+                <button className="bg-giu-red hover:bg-giu-red/90 text-white px-4 py-2 rounded">
                   Sign In
-                </Button>
+                </button>
               </Link>
               <Link href="/sign-up">
-                <Button variant="default" className="bg-giu-gold hover:bg-giu-gold/90 text-white">
+                <button className="bg-giu-gold hover:bg-giu-gold/90 text-white px-4 py-2 rounded">
                   Sign Up
-                </Button>
+                </button>
               </Link>
             </>
           )}

@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation"; // Updated import
 
 export default function SignInPage() {
   const [universityId, setUniversityId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter(); 
 
-  // Helper function to validate inputs
   const validateInputs = () => {
     if (!universityId || isNaN(Number(universityId))) {
       setError("University ID must be a valid number.");
@@ -29,7 +30,6 @@ export default function SignInPage() {
     if (!validateInputs()) {
       return;
     }
-
     try {
       const response = await axios.post("http://localhost:3000/graphql", {
         query: `
@@ -50,18 +50,19 @@ export default function SignInPage() {
           password,
         },
       });
-
       const result = response.data;
-
       if (result.data?.login) {
         const { accessToken } = result.data.login;
         sessionStorage.setItem("token", accessToken);
-        alert("Sign-in successful!");
-        // Redirect or perform further actions here
+        // Dispatch custom event to notify other components
+        window.dispatchEvent(new Event("userLoginStatusChanged"));
+        // Redirect to the dashboard
+        router.push("/dashboard"); // Updated to use App Router's router
       } else {
         setError(result.errors?.[0]?.message || "Sign-in failed");
       }
     } catch (err) {
+      console.log("Error:", err);
       setError("An error occurred. Please try again.");
     }
   };
