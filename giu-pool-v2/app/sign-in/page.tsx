@@ -56,8 +56,9 @@ export default function SignInPage() {
         sessionStorage.setItem("token", accessToken);
         // Dispatch custom event to notify other components
         window.dispatchEvent(new Event("userLoginStatusChanged"));
-        // Redirect to the dashboard
-        router.push("/dashboard"); // Updated to use App Router's router
+        // Redirect to the dashboard based on user role
+        const userRole = result.data.login.user.role;
+        router.push(`/dashboard/${userRole.toLowerCase()}`);
       } else {
         setError(result.errors?.[0]?.message || "Sign-in failed");
       }

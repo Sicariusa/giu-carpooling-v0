@@ -2,24 +2,62 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FaUserCircle } from "react-icons/fa";
 import { useUser } from "@/app/utils/UserContext";
+import { User } from "@/types";
+import axios from "axios";
 
 export function Header() {
   const { isLoggedIn, setIsLoggedIn } = useUser();
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Check if the user is logged in by checking for a token in sessionStorage
-    const token = sessionStorage.getItem("token");
-    setIsLoggedIn(!!token);
+    const fetchUserData = async () => {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+        setIsLoggedIn(false);
+        return;
+      }
+
+      try {
+        const userResponse = await axios.post(
+          "http://localhost:3000/graphql",
+          {
+            query: `
+              query GetUserByToken {
+                getUserByToken {
+                  id
+                  email
+                  universityId
+                  role
+                }
+              }
+            `,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const userData: User = userResponse.data.data.getUserByToken;
+        setUser(userData);
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+        setIsLoggedIn(false);
+      }
+    };
+
+    fetchUserData();
 
     // Listen for custom event to update login state dynamically
     const handleLoginStatusChange = () => {
       const updatedToken = sessionStorage.getItem("token");
       setIsLoggedIn(!!updatedToken);
+      if (updatedToken) {
+        fetchUserData();
+      } else {
+        setUser(null);
+      }
     };
 
     window.addEventListener("userLoginStatusChanged", handleLoginStatusChange);
@@ -52,17 +90,26 @@ export function Header() {
           </div>
         </Link>
         <nav className="flex items-center space-x-6">
-          <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            Dashboard
-          </Link>
-          <Link href="/book" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            Book a Ride
-          </Link>
-          <Link href="/offer" className="text-sm font-medium text-muted-foreground hover:text-primary">
-            Offer a Ride
-          </Link>
-          {isLoggedIn ? (
+          {isLoggedIn && user ? (
             <>
+              <Link
+                href={`/dashboard/${user.role.toLowerCase()}`}
+                className="text-sm font-medium text-muted-foreground hover:text-primary"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/book"
+                className="text-sm font-medium text-muted-foreground hover:text-primary"
+              >
+                Book a Ride
+              </Link>
+              <Link
+                href="/offer"
+                className="text-sm font-medium text-muted-foreground hover:text-primary"
+              >
+                Offer a Ride
+              </Link>
               <Link href="/profile" className="text-muted-foreground hover:text-primary">
                 <FaUserCircle size={24} />
               </Link>
