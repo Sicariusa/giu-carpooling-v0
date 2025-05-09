@@ -66,6 +66,8 @@ export default function BookRidePage() {
   // Search rides
   const searchRides = async () => {
     setLoading(true);
+
+    // Build the searchInput object dynamically, excluding empty fields
     const searchInput: Record<string, any> = {};
     if (formData.from) searchInput.fromZoneId = formData.from;
     if (formData.to) searchInput.toZoneId = formData.to;
@@ -76,24 +78,47 @@ export default function BookRidePage() {
 
     console.log("Filtered searchInput:", searchInput);
 
+    // Retrieve the JWT token from sessionStorage
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+      console.error("No authentication token found. Please sign in.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await axios.post("http://localhost:3002/graphql", {
-        query: `
-          query SearchRides($searchInput: SearchRideInput!) {
-            searchRides(searchInput: $searchInput) {
-              _id
-              startLocation
-              endLocation
-              availableSeats
+      const response = await axios.post(
+        "http://localhost:3002/graphql",
+        {
+          query: `
+            query SearchRides($searchInput: SearchRideInput!) {
+              searchRides(searchInput: $searchInput) {
+                _id
+                startLocation
+                endLocation
+                availableSeats
+              }
             }
-          }
-        `,
-        variables: {
-          searchInput,
+          `,
+          variables: {
+            searchInput,
+          },
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
+          },
+        }
+      );
 
       console.log("Response from backend:", response.data);
+
+      if (response.data?.data?.searchRides) {
+        setRides(response.data.data.searchRides);
+      } else {
+        console.error("No rides found or error in response:", response.data);
+      }
     } catch (error) {
       console.error("Error fetching rides:", error);
       if (axios.isAxiosError(error)) {
@@ -109,7 +134,6 @@ export default function BookRidePage() {
   // Book a ride
   const bookRide = (rideId: string) => {
     console.log("Booking ride with ID:", rideId);
-    router.push(`/booking-confirmation?rideId=${rideId}`);
   };
 
   return (
