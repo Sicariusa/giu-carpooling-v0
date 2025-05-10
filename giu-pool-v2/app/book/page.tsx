@@ -18,12 +18,15 @@ interface Ride {
   pricePerSeat: number;
   departureTime: string;
   driverName: string;
+  status: string;
+  totalSeats: number;
+  stops: { stopId: string; sequence: number }[];
 }
 
 // Define types for form data
 interface FormData {
-  from: string;
-  to: string;
+  fromZoneId: string;
+  toZoneId: string;
   date: string;
   time: string;
   girlsOnly: boolean;
@@ -31,12 +34,21 @@ interface FormData {
   maxPrice: string;
 }
 
+const zones = [
+  { id: "67f679d3329a90cf753b5248", name: "GIU Campus" },
+  { id: "67f679d3329a90cf753b524c", name: "Heliopolis" },
+  { id: "67f679d3329a90cf753b5249", name: "New Cairo - 1st Settlement" },
+  { id: "67f679d3329a90cf753b524a", name: "New Cairo - 5th Settlement" },
+  { id: "67f679d3329a90cf753b524b", name: "Maadi" },
+  { id: "67f679d3329a90cf753b524d", name: "Nasr City" },
+];
+
 export default function BookRidePage() {
   const [rides, setRides] = useState<Ride[]>([]); // Array of rides
   const [loading, setLoading] = useState<boolean>(false); // Loading state
   const [formData, setFormData] = useState<FormData>({
-    from: "",
-    to: "",
+    fromZoneId: "",
+    toZoneId: "",
     date: "",
     time: "",
     girlsOnly: false,
@@ -47,12 +59,12 @@ export default function BookRidePage() {
 
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement; 
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     });
-    console.log("Updated formData:", { ...formData, [name]: type === "checkbox" ? checked : value });
+    console.log("Updated formData:", { ...formData, [name]: value });
   };
 
   const handleSwitchChange = (checked: boolean) => {
@@ -67,10 +79,9 @@ export default function BookRidePage() {
   const searchRides = async () => {
     setLoading(true);
 
-    // Build the searchInput object dynamically, excluding empty fields
     const searchInput: Record<string, any> = {};
-    if (formData.from) searchInput.fromZoneId = formData.from;
-    if (formData.to) searchInput.toZoneId = formData.to;
+    if (formData.fromZoneId) searchInput.fromZoneId = formData.fromZoneId;
+    if (formData.toZoneId) searchInput.toZoneId = formData.toZoneId;
     if (formData.date) searchInput.departureDate = formData.date;
     if (formData.girlsOnly !== undefined) searchInput.girlsOnly = formData.girlsOnly;
     if (formData.minAvailableSeats) searchInput.minAvailableSeats = formData.minAvailableSeats;
@@ -78,7 +89,6 @@ export default function BookRidePage() {
 
     console.log("Filtered searchInput:", searchInput);
 
-    // Retrieve the JWT token from sessionStorage
     const token = sessionStorage.getItem("token");
 
     if (!token) {
@@ -98,6 +108,14 @@ export default function BookRidePage() {
                 startLocation
                 endLocation
                 availableSeats
+                pricePerSeat
+                totalSeats
+                status
+                departureTime
+                stops {
+                  stopId
+                  sequence
+                }
               }
             }
           `,
@@ -107,7 +125,7 @@ export default function BookRidePage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -115,7 +133,18 @@ export default function BookRidePage() {
       console.log("Response from backend:", response.data);
 
       if (response.data?.data?.searchRides) {
-        setRides(response.data.data.searchRides);
+        const mappedRides = await Promise.all(
+          response.data.data.searchRides.map(async (ride: any) => {
+            const enhancedStops = await enhanceStopsWithNames(ride.stops);
+            return {
+              id: ride._id,
+              ...ride,
+              stops: enhancedStops, // Replace stops with enhanced stops
+            };
+          })
+        );
+        console.log("Mapped rides with enhanced stops:", mappedRides);
+        setRides(mappedRides);
       } else {
         console.error("No rides found or error in response:", response.data);
       }
@@ -136,6 +165,49 @@ export default function BookRidePage() {
     console.log("Booking ride with ID:", rideId);
   };
 
+  const fetchStopName = async (stopId: string) => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:3002/graphql",
+        {
+          query: `
+            query GetStop($id: ID!) {
+              stop(id: $id) {
+                name
+              }
+            }
+          `,
+          variables: {
+            id: stopId,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data.data.stop.name; // Return the stop name
+    } catch (error) {
+      console.error(`Error fetching stop name for stopId ${stopId}:`, error);
+      return "Unknown Stop"; // Fallback name in case of an error
+    }
+  };
+
+  const enhanceStopsWithNames = async (stops: any[]) => {
+    const enhancedStops = await Promise.all(
+      stops.map(async (stop) => {
+        const stopName = await fetchStopName(stop.stopId);
+        return {
+          ...stop,
+          stopName, // Add the stop name to the stop object
+        };
+      })
+    );
+    return enhancedStops;
+  };
+
   return (
     <div className="container max-w-2xl py-6">
       <div className="text-center mb-8">
@@ -147,25 +219,39 @@ export default function BookRidePage() {
         <CardContent className="p-6 space-y-6">
           <div className="space-y-4">
             <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                name="from"
-                placeholder="From (GIU or destination)"
-                className="pl-10"
-                value={formData.from}
+              <Label htmlFor="fromZoneId">From</Label>
+              <select
+                id="fromZoneId"
+                name="fromZoneId"
+                className="w-full border rounded px-3 py-2"
+                value={formData.fromZoneId}
                 onChange={handleInputChange}
-              />
+              >
+                <option value="">Select a starting zone</option>
+                {zones.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="relative">
-              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                name="to"
-                placeholder="To (GIU or destination)"
-                className="pl-10"
-                value={formData.to}
+              <Label htmlFor="toZoneId">To</Label>
+              <select
+                id="toZoneId"
+                name="toZoneId"
+                className="w-full border rounded px-3 py-2"
+                value={formData.toZoneId}
                 onChange={handleInputChange}
-              />
+              >
+                <option value="">Select a destination zone</option>
+                {zones.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -246,13 +332,23 @@ export default function BookRidePage() {
         {rides.map((ride) => (
           <Card key={ride.id}>
             <CardHeader>
-              <CardTitle>{ride.startLocation} → {ride.endLocation}</CardTitle>
+              <CardTitle>
+                {ride.startLocation} → {ride.endLocation}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Driver: {ride.driverName}</p>
-              <p>Departure: {new Date(ride.departureTime).toLocaleString()}</p>
-              <p>Seats Available: {ride.availableSeats}</p>
-              <p>Price: ${ride.pricePerSeat}</p>
+              <p><strong>Status:</strong> {ride.status}</p>
+              <p><strong>Departure:</strong> {new Date(ride.departureTime).toLocaleString()}</p>
+              <p><strong>Seats Available:</strong> {ride.availableSeats}</p>
+              <p><strong>Price Per Seat:</strong> ${ride.pricePerSeat}</p>
+              <p><strong>Stops:</strong></p>
+              <ul className="list-disc pl-5">
+                {ride.stops.map((stop: any) => (
+                  <li key={stop.stopId}>
+                    Stop Name: {stop.stopName}, Sequence: {stop.sequence}
+                  </li>
+                ))}
+              </ul>
               <Button
                 className="mt-4 bg-green-500 hover:bg-green-600"
                 onClick={() => bookRide(ride.id)}
