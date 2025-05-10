@@ -1,5 +1,5 @@
 "use client";
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Clock, Calendar, DollarSign, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,8 +44,8 @@ const zones = [
 ];
 
 export default function BookRidePage() {
-  const [rides, setRides] = useState<Ride[]>([]); // Array of rides
-  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
     fromZoneId: "",
     toZoneId: "",
@@ -55,7 +55,52 @@ export default function BookRidePage() {
     minAvailableSeats: 1,
     maxPrice: "",
   });
+  const [userGender, setUserGender] = useState<string | null>(null); // State for user gender
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchGender = async () => {
+      const gender = await fetchUserGender();
+      setUserGender(gender);
+      console.log("User gender state updated to:", gender); // Debug log
+    };
+    fetchGender();
+  }, []);
+
+  const fetchUserGender = async () => {
+    try {
+      const token = sessionStorage.getItem("token");
+      if (!token) {
+        console.error("No token found in sessionStorage.");
+        return null;
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/graphql",
+        {
+          query: `
+            query GetUserByToken {
+              getUserByToken {
+                gender
+              }
+            }
+          `,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const gender = response.data.data.getUserByToken.gender;
+      console.log("Fetched gender:", gender); // Debug log
+      return gender; // Return the gender
+    } catch (error) {
+      console.error("Error fetching user gender:", error);
+      return null; // Fallback in case of an error
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -306,13 +351,17 @@ export default function BookRidePage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="girls-only">Girls Only Ride</Label>
-            <Switch
-              id="girls-only"
-              name="girlsOnly"
-              checked={formData.girlsOnly}
-              onCheckedChange={handleSwitchChange}
-            />
+            {userGender === "Female" && (
+              <>
+                <Label htmlFor="girls-only">Girls Only Ride</Label>
+                <Switch
+                  id="girls-only"
+                  name="girlsOnly"
+                  checked={formData.girlsOnly}
+                  onCheckedChange={handleSwitchChange}
+                />
+              </>
+            )}
           </div>
 
           <Button
