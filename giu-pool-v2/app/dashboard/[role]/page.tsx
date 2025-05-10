@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Plus, Edit } from "lucide-react";
-import DashboardLoading from "../loading"; // Import the loading component
+import DashboardLoading from "./loading"; // Import the loading component
+import AdminDashboard from "../AdminDashboard"; // Import AdminDashboard
 
 interface User {
   id: string;
-  name: string;
-  role: "DRIVER" | "PASSENGER";
+  firstName: string;
+  role: "DRIVER" | "PASSENGER" | "ADMIN";
 }
 
 interface Ride {
@@ -50,6 +51,8 @@ export default function DashboardPage() {
               query GetUserByToken {
                 getUserByToken {
                   id
+                  firstName
+                  lastName
                   email
                   universityId
                   role
@@ -57,14 +60,16 @@ export default function DashboardPage() {
               }
             `,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}`, 
+            'Content-Type': 'application/json', } }
         );
         const userData: User = userResponse.data.data.getUserByToken;
         console.log("userData", userData);
         setUser(userData);
 
-        // Fetch rides based on role
+        // Handle data fetching based on role
         if (userData.role === "DRIVER") {
+          // Fetch driver-specific data
           const [currentRideResponse, scheduledRidesResponse] = await Promise.all([
             axios.post(
               "http://localhost:3002/graphql",
@@ -111,12 +116,12 @@ export default function DashboardPage() {
           setCurrentRide(activeRides.length > 0 ? activeRides[0] : null);
           setScheduledRides(scheduledRides);
         } else if (userData.role === "PASSENGER") {
-          // Autodetect location
+          // Fetch passenger-specific data
           navigator.geolocation.getCurrentPosition(async (position) => {
             const { latitude, longitude } = position.coords;
 
             const ridesResponse = await axios.post(
-              "http://localhost:3000/graphql",
+              "http://localhost:3002/graphql",
               {
                 query: `
                   query GetRidesByZone($latitude: Float!, $longitude: Float!) {
@@ -139,6 +144,10 @@ export default function DashboardPage() {
             const availableRides: Ride[] = ridesResponse.data.data.getRidesByZone;
             setRides(availableRides);
           });
+        } else if (userData.role === "ADMIN") {
+          // Handle admin-specific logic
+          console.log("Admin user logged in");
+          // You can fetch admin-specific data here if needed
         }
       } catch (err) {
         setError("Failed to fetch data. Please try again.");
@@ -164,12 +173,18 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return <DashboardLoading />;
+    return <DashboardLoading />; // Render the loading skeleton while data is being fetched
   }
 
   return (
     <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">Welcome, {user.name}!</h1>
+      <h1 className="text-2xl font-bold mb-6">Welcome, {user.firstName}!</h1>
+
+      {user.role === "ADMIN" && (
+        <>
+        <AdminDashboard />
+        </>
+      )}
 
       {user.role === "DRIVER" && (
         <>

@@ -1,0 +1,113 @@
+.header {
+    background-color: #dc2626;
+    color: white;
+    padding: 20px 40px;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  
+  .section {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .section h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: #111827;
+  }
+  
+  .stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .statBox {
+    background-color: #f3f4f6;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 1;
+    text-align: center;
+  }
+  
+  .statBox h3 {
+    margin: 0;
+    font-size: 28px;
+    color: #dc2626;
+  }
+  
+  .statBox p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: #374151;
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table th, .table td {
+    text-align: left;
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+  }
+  
+  .container table th {
+    background-color: #f3f4f6;
+    color: #111827;
+  }
+  
+  .primary {
+    background-color: #dc2626;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  
+  .secondary {
+    background-color: #6b7280;
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 13px;
+    margin-left: 5px;
+    cursor: pointer;
+  }
+  
+  .status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+  
+  .pending {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .input {
+    padding: 8px;
+    margin: 10px 0;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+  
