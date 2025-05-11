@@ -6,6 +6,7 @@ export interface User {
   studentId: string
   avatarUrl?: string
   stats: UserStats
+  role: "DRIVER" | "PASSENGER"
 }
 
 export interface UserStats {
