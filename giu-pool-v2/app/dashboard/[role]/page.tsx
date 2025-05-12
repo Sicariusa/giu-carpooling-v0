@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Edit } from "lucide-react";
 import DashboardLoading from "./loading"; // Import the loading component
 import AdminDashboard from "../AdminDashboard"; // Import AdminDashboard
+import PassengerDashboard from "../PassengerDashboard";
 
 interface User {
   id: string;
@@ -272,33 +273,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {user.role === "PASSENGER" && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {rides.map((ride) => (
-            <Card key={ride.id}>
-              <CardContent>
-                <p>
-                  <strong>From:</strong> {ride.startLocation}
-                </p>
-                <p>
-                  <strong>To:</strong> {ride.endLocation}
-                </p>
-                <p>
-                  <strong>Departure:</strong> {new Date(ride.departureTime).toLocaleString()}
-                </p>
-                <p>
-                  <strong>Seats:</strong> {ride.availableSeats}
-                </p>
-                <p>
-                  <strong>Price:</strong> {ride.pricePerSeat} EGP
-                </p>
-                {ride.girlsOnly && <p className="text-pink-500">Girls Only</p>}
-                <Button className="mt-4 bg-giu-red hover:bg-giu-red/90">Book Now</Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+{user.role === "PASSENGER" && <PassengerDashboard />}
     </div>
   );
 }
