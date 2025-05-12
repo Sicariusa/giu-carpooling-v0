@@ -37,6 +37,24 @@ export interface RideFilters {
   girlsOnly?: boolean
 }
 
+export interface RideStopInput {
+  stopId: string;
+  location: string;
+  sequence: number;
+}
+
+export interface CreateRideInput {
+  stops: RideStopInput[];
+  departureTime: Date;
+  totalSeats: number;
+  availableSeats: number;
+  pricePerSeat: number;
+  priceScale?: number;
+  girlsOnly?: boolean;
+  startLocation: string;
+  endLocation: string;
+}
+
 // Form types
 export interface CreateRideForm {
   from: string
