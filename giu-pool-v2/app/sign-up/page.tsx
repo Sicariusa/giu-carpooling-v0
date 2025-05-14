@@ -17,7 +17,6 @@ export default function SignUpPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [gender, setGender] = useState(""); // New state for gender
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -44,10 +43,6 @@ export default function SignUpPage() {
     }
     if (!lastName.trim()) {
       setError("Last name is required.");
-      return false;
-    }
-    if (!gender) {
-      setError("Gender is required.");
       return false;
     }
     if (phoneNumber && isNaN(Number(phoneNumber))) {
@@ -81,7 +76,6 @@ export default function SignUpPage() {
             password,
             firstName,
             lastName,
-            gender, 
             phoneNumber: phoneNumber ? parseInt(phoneNumber, 10) : null,
           },
         },
@@ -171,19 +165,6 @@ export default function SignUpPage() {
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="gender">Gender</Label>
-            <select
-              id="gender"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone-number">Phone Number (Optional)</Label>

@@ -1,165 +1,105 @@
-'use client';
+"use client";
+
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Settings, Car } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import axios from "axios";
-import { useState, useEffect } from "react";
+
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  universityId: number;
+  role: "DRIVER" | "PASSENGER" | "ADMIN";
+}
 
 interface Ride {
-  id: string;
+  _id: string;
   startLocation: string;
   endLocation: string;
   departureTime: string;
-  pricePerSeat: number;
-  girlsOnly: boolean;
-  availableSeats?: number;
-  status?: string;
+  status: string;
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<{
-    firstName: string;
-    lastName: string;
-    email: string;
-    universityId: string;
-  } | null>(null);
-
-  const [offeredRides, setOfferedRides] = useState<Ride[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const [rideHistory, setRideHistory] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  // Fetch user data
-  const fetchUserData = async () => {
-    try {
-      const token = sessionStorage.getItem("token");
-      if (!token) {
-        console.error("No token found in sessionStorage.");
-        return null;
-      }
-
-      const response = await axios.post(
-        "http://localhost:3000/graphql",
-        {
-          query: `
-            query GetUserByToken {
-              getUserByToken {
-                id
-                firstName
-                lastName
-                email
-                universityId
-              }
-            }
-          `,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      return response.data.data.getUserByToken; // Return the user data
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-      return null; // Fallback in case of an error
-    }
-  };
-
-  // Fetch offered rides
-  const fetchOfferedRides = async () => {
-    try {
-      const token = sessionStorage.getItem("token");
-      if (!token) {
-        console.error("No token found in sessionStorage.");
-        return [];
-      }
-
-      const response = await axios.post(
-        "http://localhost:3002/graphql",
-        {
-          query: `
-            query MyRides {
-              myRides {
-                id
-                startLocation
-                endLocation
-                departureTime
-                availableSeats
-                pricePerSeat
-                girlsOnly
-              }
-            }
-          `,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      return response.data.data.myRides || [];
-    } catch (error) {
-      console.error("Error fetching offered rides:", error);
-      return [];
-    }
-  };
-
-  // Fetch ride history
-  const fetchRideHistory = async () => {
-    try {
-      const token = sessionStorage.getItem("token");
-      if (!token) {
-        console.error("No token found in sessionStorage.");
-        return [];
-      }
-
-      const response = await axios.post(
-        "http://localhost:3002/graphql",
-        {
-          query: `
-            query MyRideHistory {
-              myRideHistory {
-                id
-                startLocation
-                endLocation
-                departureTime
-                pricePerSeat
-                girlsOnly
-                status
-              }
-            }
-          `,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      return response.data.data.myRideHistory || [];
-    } catch (error) {
-      console.error("Error fetching ride history:", error);
-      return [];
-    }
-  };
-
-  // Fetch all data on page load
   useEffect(() => {
-    const fetchData = async () => {
-      const userData = await fetchUserData();
-      setUser(userData);
+    const token = sessionStorage.getItem("token");
+    if (!token) return;
 
-      const offered = await fetchOfferedRides();
-      const history = await fetchRideHistory();
-      setOfferedRides(offered);
-      setRideHistory(history);
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
     };
-    fetchData();
+
+    const fetchUserData = async () => {
+      try {
+        const userRes = await axios.post(
+          "http://localhost:3000/graphql",
+          {
+            query: `
+              query {
+                getUserByToken {
+                  id
+                  firstName
+                  lastName
+                  email
+                  universityId
+                  role
+                }
+              }
+            `,
+          },
+          { headers }
+        );
+
+        const userData = userRes.data?.data?.getUserByToken;
+        setUser(userData);
+
+        if (userData) {
+          const ridesRes = await axios.post(
+            "http://localhost:3002/graphql",
+            {
+              query: `
+                query {
+                  myRideHistory {
+                    _id
+                    startLocation
+                    endLocation
+                    departureTime
+                    status
+                  }
+                }
+              `,
+            },
+            { headers }
+          );
+          setRideHistory(ridesRes.data?.data?.myRideHistory ?? []);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, []);
+
+  if (loading) return <p>Loading profile...</p>;
+  if (error) return <p className="text-red-500">{error}</p>;
+  if (!user) return <p>User not found.</p>;
 
   return (
     <div className="container max-w-4xl py-6">
@@ -172,17 +112,15 @@ export default function ProfilePage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold">
-                  {user ? `${user.firstName} ${user.lastName}` : "Loading..."}
+                  {user.firstName} {user.lastName}
                 </h1>
-                <p className="text-muted-foreground">
-                  {user ? user.email : "Loading..."}
-                </p>
+                <p className="text-muted-foreground">{user.email}</p>
                 <p className="text-sm text-muted-foreground">
-                  {user ? `Student ID: ${user.universityId}` : "Loading..."}
+                  Student ID: {user.universityId}
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push("/profile/edit")}>
               <Settings className="h-4 w-4" />
               Edit Profile
             </Button>
@@ -193,14 +131,20 @@ export default function ProfilePage() {
       <div className="grid gap-4 md:grid-cols-3 mb-8">
         <Card>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-giu-gold">{offeredRides.length}</div>
-            <p className="text-sm text-muted-foreground">Total Offered Rides</p>
+            <div className="text-3xl font-bold text-giu-gold">{rideHistory.length}</div>
+            <p className="text-sm text-muted-foreground">Total Rides</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="text-3xl font-bold text-giu-gold">{rideHistory.length}</div>
-            <p className="text-sm text-muted-foreground">Total Ride History</p>
+            <div className="text-3xl font-bold text-muted-foreground">Coming Soon</div>
+            <p className="text-sm text-muted-foreground">Average Rating</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-3xl font-bold text-muted-foreground">Coming Soon</div>
+            <p className="text-sm text-muted-foreground">EGP Saved</p>
           </CardContent>
         </Card>
       </div>
@@ -208,14 +152,17 @@ export default function ProfilePage() {
       <Tabs defaultValue="history">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="history">Ride History</TabsTrigger>
-          <TabsTrigger value="offered">Offered Rides</TabsTrigger>
+          {user.role === "DRIVER" && (
+            <TabsTrigger value="offered">Offered Rides</TabsTrigger>
+          )}
         </TabsList>
 
-        {/* Ride History Tab */}
         <TabsContent value="history" className="space-y-4 mt-4">
-          {rideHistory.length > 0 ? (
+          {rideHistory.length === 0 ? (
+            <p className="text-muted-foreground">No rides yet.</p>
+          ) : (
             rideHistory.map((ride) => (
-              <Card key={ride.id}>
+              <Card key={ride._id}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -223,10 +170,7 @@ export default function ProfilePage() {
                         {ride.startLocation} → {ride.endLocation}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(ride.departureTime).toLocaleString()} • {ride.pricePerSeat} EGP
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {ride.girlsOnly ? "Girls Only" : "Open to All"}
+                        {new Date(ride.departureTime).toLocaleString()}
                       </div>
                     </div>
                     <Badge variant="secondary" className="bg-giu-gold/10 text-giu-gold">
@@ -236,42 +180,15 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             ))
-          ) : (
-            <p className="text-muted-foreground">No ride history available.</p>
           )}
         </TabsContent>
 
-        {/* Offered Rides Tab */}
-        <TabsContent value="offered" className="space-y-4 mt-4">
-          {offeredRides.length > 0 ? (
-            offeredRides.map((ride) => (
-              <Card key={ride.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">
-                        {ride.startLocation} → {ride.endLocation}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(ride.departureTime).toLocaleString()} • {ride.pricePerSeat} EGP
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {ride.girlsOnly ? "Girls Only" : "Open to All"}
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="bg-giu-gold/10 text-giu-gold">
-                      {ride.availableSeats} Seats Available
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <p className="text-muted-foreground">No offered rides available.</p>
-          )}
-        </TabsContent>
+        {user.role === "DRIVER" && (
+          <TabsContent value="offered" className="mt-4">
+            <p className="text-muted-foreground">Coming soon: Offered ride history.</p>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
-
