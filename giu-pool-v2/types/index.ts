@@ -17,17 +17,23 @@ export interface UserStats {
 
 // Ride related types
 export interface Ride {
-  id: string
-  from: string
-  to: string
-  date: string
-  time: string
-  price: number
-  availableSeats: number
-  girlsOnly: boolean
-  status: "active" | "completed" | "cancelled"
-  driverId: string
-  passengers: string[]
+  id: string;
+  from: string;
+  to: string;
+  date: string;
+  time: string;
+  price: number;
+  availableSeats: number;
+  totalSeats: number;
+  girlsOnly: boolean;
+  status: string;
+  driverId?: string;
+  passengers?: any[];
+  stops: {
+    stopId: string;
+    sequence: number;
+    stopName?: string;
+  }[];
 }
 
 export interface RideFilters {
@@ -55,4 +61,3 @@ export interface BookRideForm {
   time: string
   girlsOnly: boolean
 }
-
