@@ -33,6 +33,8 @@ export interface RideStop {
   stopId: string;
   location: string;
   sequence: number;
+  latitude: number;
+  longitude: number;
 }
 
 export enum BookingStatus {
@@ -80,6 +82,8 @@ export interface RideFilters {
 export interface RideStopInput {
   stopId: string;
   location: string;
+  latitude: number;
+  longitude: number;
   sequence: number;
 }
 

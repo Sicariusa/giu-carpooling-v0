@@ -230,14 +230,22 @@ export default function OfferRidePage() {
   };
 
   const handleSelectStop = (stop: any) => {
+    if (!stop.name) {
+      console.error("Stop name is required");
+      return;
+    }
     const newStop: RideStopInput = {
       stopId: stop._id,
       location: stop.name,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
       sequence: stops.length + 1,
     };
     setStops([...stops, newStop]);
     setSearchQuery("");
     setSearchResults([]);
+
+    console.log("stops", stops);
   };
 
   const handleRemoveStop = (index: number) => {
@@ -263,9 +271,15 @@ export default function OfferRidePage() {
     
     // Add origin as first stop if we have a selected origin stop
     if (selectedOriginStop) {
+      if (!selectedOriginStop.name) {
+        console.error("Origin stop name is required");
+        return;
+      }
       allStops.push({
         stopId: selectedOriginStop._id,
         location: selectedOriginStop.name,
+        latitude: selectedOriginStop.latitude,
+        longitude: selectedOriginStop.longitude,
         sequence: 1
       });
     }
@@ -279,9 +293,15 @@ export default function OfferRidePage() {
 
     // Add destination as last stop if we have a GIU stop
     if (giuStop) {
+      if (!giuStop.name) {
+        console.error("Destination stop name is required");
+        return;
+      }
       allStops.push({
         stopId: giuStop._id,
         location: giuStop.name,
+        latitude: giuStop.latitude,
+        longitude: giuStop.longitude,
         sequence: allStops.length + 1
       });
     }
@@ -298,7 +318,7 @@ export default function OfferRidePage() {
       endLocation: giuStop ? giuStop.name : destination,
     };
 
-    console.log(rideData)
+    console.log("rideData", rideData);
     try {
       const response = await fetch("http://localhost:3002/graphql", {
         method: "POST",
@@ -327,6 +347,7 @@ export default function OfferRidePage() {
       });
 
       const data = await response.json();
+      console.log("data", data);
       if (data.errors) {
         throw new Error(data.errors[0].message);
       }
@@ -397,9 +418,15 @@ export default function OfferRidePage() {
                                 setOrigin(stop.name);
                                 setSelectedOriginStop(stop);
                                 // Set this stop as the first stop in the sequence
+                                if (!stop.name) {
+                                  console.error("Stop name is required");
+                                  return;
+                                }
                                 const newStop: RideStopInput = {
                                   stopId: stop._id,
                                   location: stop.name,
+                                  latitude: stop.latitude,
+                                  longitude: stop.longitude,
                                   sequence: 1
                                 };
                                 // Update existing stops to have incremented sequence numbers

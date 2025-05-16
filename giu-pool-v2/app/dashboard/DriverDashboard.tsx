@@ -2,10 +2,14 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Users, ChevronDown, ChevronUp, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, ChevronDown, ChevronUp, Check, X, Navigation } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Ride, Booking, BookingStatus, UserInfo } from "@/types";
+import { Ride, Booking, BookingStatus, UserInfo, RideStop } from "@/types";
 import styles from './DriverDashboard.module.css';
+import { Button } from "@/components/ui/button";
+
+// Remove the RideWithStops interface since we updated the base Ride type
+type DashboardRide = Ride;
 
 enum BookingsState {
   LOADING = 'LOADING',
@@ -55,18 +59,18 @@ const fetchUserDetails = async (userId: string): Promise<UserInfo | null> => {
 // Create a more robust cache manager
 const cacheManager = {
   data: null as {
-    activeRides: Ride[];
-    scheduledRides: Ride[];
-    pastRides: Ride[];
+    activeRides: DashboardRide[];
+    scheduledRides: DashboardRide[];
+    pastRides: DashboardRide[];
     bookings: Record<string, Booking[]>;
     timestamp: number;
   } | null,
   subscribers: new Set<() => void>(),
   isFetching: false,
   fetchPromise: null as Promise<{
-    activeRides: Ride[];
-    scheduledRides: Ride[];
-    pastRides: Ride[];
+    activeRides: DashboardRide[];
+    scheduledRides: DashboardRide[];
+    pastRides: DashboardRide[];
     bookings: Record<string, Booking[]>;
     timestamp: number;
   }> | null,
@@ -138,7 +142,10 @@ const cacheManager = {
                   girlsOnly
                   stops {
                     stopId
+                    location
                     sequence
+                    latitude
+                    longitude
                   }
                 }
               }
@@ -163,7 +170,10 @@ const cacheManager = {
                   girlsOnly
                   stops {
                     stopId
+                    location
                     sequence
+                    latitude
+                    longitude
                   }
                 }
               }
@@ -188,7 +198,10 @@ const cacheManager = {
                   girlsOnly
                   stops {
                     stopId
+                    location
                     sequence
+                    latitude
+                    longitude
                   }
                 }
               }
@@ -202,6 +215,10 @@ const cacheManager = {
         scheduledRes.json(),
         pastRes.json(),
       ]);
+
+      console.log("activeData", activeData);
+      console.log("scheduledData", scheduledData);
+      console.log("pastData", pastData);
 
       if (activeData.errors) throw new Error(activeData.errors[0].message);
       if (scheduledData.errors) throw new Error(scheduledData.errors[0].message);
@@ -466,7 +483,7 @@ const statusCheckManager = {
 
             // Update the ride status in the cache
             if (cacheManager.data) {
-              const updateRideInArray = (rides: Ride[]) => 
+              const updateRideInArray = (rides: DashboardRide[]) => 
                 rides.map(r => r._id === ride._id ? { ...r, status: "ACTIVE" } : r);
 
               cacheManager.data = {
@@ -509,7 +526,7 @@ const DriverDashboard = () => {
 };
 
 // Separate the dashboard content into its own component
-const DriverDashboardContent = () => {
+const DriverDashboardContent: React.FC = () => {
   const router = useRouter();
   const {
     activeRides,
@@ -618,7 +635,7 @@ const DriverDashboardContent = () => {
 
       // Update the ride status in the cache
       if (cacheManager.data) {
-        const updateRideInArray = (rides: Ride[]) => 
+        const updateRideInArray = (rides: DashboardRide[]) => 
           rides.map(r => r._id === rideId ? { ...r, status: "COMPLETED" } : r);
 
         cacheManager.data = {
@@ -717,55 +734,110 @@ const DriverDashboardContent = () => {
     );
   };
 
-  const renderRideCard = (ride: Ride, showActions = true) => (
+  const renderRideCard = (ride: DashboardRide, showActions = true) => (
     <Card key={ride._id} className={styles.card}>
       <CardContent className={styles.cardContent}>
-        <div className={styles.statusBadge + " " + styles[`status${ride.status}`]}>
-          {ride.status}
-        </div>
-        <p><span className={styles.label}>From:</span> {ride.startLocation}</p>
-        <p><span className={styles.label}>To:</span> {ride.endLocation}</p>
-        <p>
-          <span className={styles.label}>Departure:</span>{" "}
-          {new Date(ride.departureTime).toLocaleString()}
-        </p>
-        <p>
-          <span className={styles.label}>Seats:</span>{" "}
-          {ride.availableSeats}/{ride.totalSeats} available
-        </p>
-        <p>
-          <span className={styles.label}>Price:</span>{" "}
-          {ride.pricePerSeat} EGP per seat
-        </p>
-        {ride.girlsOnly && (
-          <p className={styles.value}>Girls Only Ride</p>
-        )}
-        
-        <div className={styles.actions}>
-          {showActions && ride.status === "SCHEDULED" && (
-            <>
-              <button
-                className={`${styles.actionButton} ${styles.editButton}`}
-                onClick={() => handleEditRide(ride._id)}
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                className={`${styles.actionButton} ${styles.deleteButton}`}
-                onClick={() => handleDeleteRide(ride._id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </>
-          )}
-          {ride.status === "ACTIVE" && (
-            <button
-              className={`${styles.actionButton} ${styles.completeButton}`}
-              onClick={() => handleCompleteRide(ride._id)}
-            >
-              Complete Ride
-            </button>
-          )}
+        <div className="flex gap-6">
+          {/* Ride Details */}
+          <div className="flex-1">
+            <div className={styles.statusBadge + " " + styles[`status${ride.status}`]}>
+              {ride.status}
+            </div>
+            <p><span className={styles.label}>From:</span> {ride.startLocation}</p>
+            <p><span className={styles.label}>To:</span> {ride.endLocation}</p>
+            <p>
+              <span className={styles.label}>Departure:</span>{" "}
+              {new Date(ride.departureTime).toLocaleString()}
+            </p>
+            <p>
+              <span className={styles.label}>Seats:</span>{" "}
+              {ride.availableSeats}/{ride.totalSeats} available
+            </p>
+            <p>
+              <span className={styles.label}>Price:</span>{" "}
+              {ride.pricePerSeat} EGP per seat
+            </p>
+            {ride.girlsOnly && (
+              <p className={styles.value}>Girls Only Ride</p>
+            )}
+
+            <div className={styles.actions}>
+              {showActions && ride.status === "SCHEDULED" && (
+                <>
+                  <button
+                    className={`${styles.actionButton} ${styles.editButton}`}
+                    onClick={() => handleEditRide(ride._id)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                    onClick={() => handleDeleteRide(ride._id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+              {ride.status === "ACTIVE" && (
+                <button
+                  className={`${styles.actionButton} ${styles.completeButton}`}
+                  onClick={() => handleCompleteRide(ride._id)}
+                >
+                  Complete Ride
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stops List */}
+          <div className="flex-1">
+            <div className={styles.stopsList}>
+              <p className={styles.label}>Stops:</p>
+              <div className="space-y-2">
+                {ride.stops.map((stop: RideStop, index: number) => (
+                  <div key={stop.stopId} className={styles.stopItem}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={styles.stopLocation}>
+                          {index + 1}. {stop.location}
+                        </p>
+                        <p className={styles.stopCoordinates}>
+                          ({stop.latitude.toFixed(6)}, {stop.longitude.toFixed(6)})
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="ml-2"
+                        onClick={() => {
+                          // Get current location
+                          if (navigator.geolocation) {
+                            navigator.geolocation.getCurrentPosition(
+                              (position) => {
+                                const { latitude: startLat, longitude: startLng } = position.coords;
+                                // Open Google Maps in a new tab with directions
+                                const url = `https://www.google.com/maps/dir/?api=1&origin=${startLat},${startLng}&destination=${stop.latitude},${stop.longitude}&travelmode=driving`;
+                                window.open(url, '_blank');
+                              },
+                              (error) => {
+                                console.error("Error getting location:", error);
+                                alert("Could not get your location. Please enable location services.");
+                              }
+                            );
+                          } else {
+                            alert("Geolocation is not supported by your browser");
+                          }
+                        }}
+                      >
+                        <Navigation className="h-4 w-4 mr-2" />
+                        Navigate
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {renderBookings(ride._id)}
@@ -829,14 +901,22 @@ const DriverDashboardContent = () => {
 
 // Custom hook for dashboard data
 const useDashboardData = () => {
-  const [state, setState] = useState({
+  const [state, setState] = useState<{
+    activeRides: DashboardRide[];
+    scheduledRides: DashboardRide[];
+    pastRides: DashboardRide[];
+    bookings: Record<string, Booking[]>;
+    loading: boolean;
+    error: string | null;
+    bookingsLoading: Record<string, boolean>;
+  }>({
     activeRides: cacheManager.data?.activeRides || [],
     scheduledRides: cacheManager.data?.scheduledRides || [],
     pastRides: cacheManager.data?.pastRides || [],
     bookings: cacheManager.data?.bookings || {},
     loading: !cacheManager.data,
-    error: null as string | null,
-    bookingsLoading: {} as Record<string, boolean>
+    error: null,
+    bookingsLoading: {}
   });
 
   useEffect(() => {

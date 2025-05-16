@@ -160,7 +160,10 @@ export default function BookRidePage() {
                 departureTime
                 stops {
                   stopId
+                  location
                   sequence
+                  latitude
+                  longitude
                 }
               }
             }
