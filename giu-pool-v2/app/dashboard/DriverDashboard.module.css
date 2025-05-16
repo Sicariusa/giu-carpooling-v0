@@ -1,0 +1,338 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.heading {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #2d3748;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #e53e3e;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.createButton:hover {
+  background-color: #c53030;
+}
+
+.cardGrid {
+  display: grid;
+  grid-gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cardContent {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2b6cb0;
+}
+
+.value {
+  color: #4a5568;
+}
+
+.noRides {
+  font-size: 1.2rem;
+  color: #4a5568;
+  text-align: center;
+  padding: 2rem;
+  background-color: #f7fafc;
+  border-radius: 0.5rem;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+.error {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #e53e3e;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.actionButton {
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.editButton {
+  color: #2b6cb0;
+}
+
+.editButton:hover {
+  background-color: #ebf8ff;
+}
+
+.deleteButton {
+  color: #e53e3e;
+}
+
+.deleteButton:hover {
+  background-color: #fff5f5;
+}
+
+.viewBookingsButton {
+  color: #4a5568;
+  background-color: #f7fafc;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  margin-left: auto;
+}
+
+.viewBookingsButton:hover {
+  background-color: #edf2f7;
+  color: #2d3748;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.statusActive {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.statusScheduled {
+  background-color: #e9d8fd;
+  color: #553c9a;
+}
+
+.statusCompleted {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.statusCancelled {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.bookingsList {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bookingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: #f7fafc;
+  border-radius: 0.375rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.bookingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.userEmail {
+  color: #4a5568;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.userId {
+  color: #718096;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.userPhone {
+  color: #718096;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.userGender {
+  color: #718096;
+  font-size: 0.75rem;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.bookingDetails {
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin: 0.25rem 0;
+}
+
+.bookingRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-left: 1rem;
+}
+
+.bookingPrice {
+  text-align: right;
+  min-width: 100px;
+}
+
+.bookingPrice p {
+  margin: 0;
+}
+
+.bookingDate {
+  font-size: 0.75rem;
+  color: #718096;
+  margin-top: 0.25rem;
+}
+
+.bookingActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.acceptButton {
+  color: #2f855a;
+  background-color: #c6f6d5;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.acceptButton:hover {
+  background-color: #9ae6b4;
+  color: #276749;
+}
+
+.rejectButton {
+  color: #c53030;
+  background-color: #fed7d7;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s;
+}
+
+.rejectButton:hover {
+  background-color: #feb2b2;
+  color: #9b2c2c;
+}
+
+.bookingStatus {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.statusPENDING {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.statusCONFIRMED {
+  background-color: #c6f6d5;
+  color: #2f855a;
+}
+
+.statusREJECTED {
+  background-color: #fed7d7;
+  color: #c53030;
+}
+
+.statusCANCELLED {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.noBookings {
+  text-align: center;
+  color: #718096;
+  padding: 1rem;
+  background-color: #f7fafc;
+  border-radius: 0.375rem;
+  border: 1px dashed #e2e8f0;
+}
+
+.completeButton {
+  background-color: #22c55e;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.completeButton:hover {
+  background-color: #16a34a;
+}
+
+.completeButton:active {
+  background-color: #15803d;
+}

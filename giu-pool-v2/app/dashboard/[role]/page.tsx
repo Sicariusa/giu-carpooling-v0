@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import DashboardLoading from "./loading";
 import AdminDashboard from "../AdminDashboard";
 import PassengerDashboard from "../PassengerDashboard";
-//import DriverDashboard from "../DriverDashboard"; // You can make this later
+import DriverDashboard from "../DriverDashboard";
 
 interface User {
   id: string;
@@ -69,6 +69,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold mb-6">Welcome, {user.firstName}!</h1>
       {user.role === "ADMIN" && <AdminDashboard />}
       {user.role === "PASSENGER" && <PassengerDashboard />}
+      {user.role === "DRIVER" && <DriverDashboard />}
     </div>
   );
 }

@@ -17,23 +17,56 @@ export interface UserStats {
 
 // Ride related types
 export interface Ride {
-  id: string;
-  from: string;
-  to: string;
-  date: string;
-  time: string;
-  price: number;
-  availableSeats: number;
-  totalSeats: number;
-  girlsOnly: boolean;
+  _id: string;
+  startLocation: string;
+  endLocation: string;
+  departureTime: string;
   status: string;
-  driverId?: string;
-  passengers?: any[];
-  stops: {
-    stopId: string;
-    sequence: number;
-    stopName?: string;
-  }[];
+  totalSeats: number;
+  availableSeats: number;
+  pricePerSeat: number;
+  girlsOnly: boolean;
+  stops: RideStop[];
+}
+
+export interface RideStop {
+  stopId: string;
+  location: string;
+  sequence: number;
+}
+
+export enum BookingStatus {
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED"
+}
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  gender?: string;
+  phoneNumber?: number;
+  role: string;
+  universityId: number;
+}
+
+export interface Booking {
+  id: string;
+  userId: string;
+  rideId: string;
+  status: BookingStatus;
+  pickupStopId?: string;
+  dropoffStopId?: string;
+  pickupLocation: string;
+  dropoffLocation: string;
+  price?: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: UserInfo;
+  passengerId?: string;
 }
 
 export interface RideFilters {
@@ -44,6 +77,24 @@ export interface RideFilters {
 }
 
 // Form types
+export interface RideStopInput {
+  stopId: string;
+  location: string;
+  sequence: number;
+}
+
+export interface CreateRideInput {
+  stops: RideStopInput[];
+  departureTime: Date;
+  totalSeats: number;
+  availableSeats: number;
+  pricePerSeat: number;
+  priceScale?: number;
+  girlsOnly?: boolean;
+  startLocation: string;
+  endLocation: string;
+}
+
 export interface CreateRideForm {
   from: string
   to: string
