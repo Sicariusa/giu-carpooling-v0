@@ -1,61 +1,67 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import styles from './AdminDashboard.module.css';
+"use client";
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { refundPayment } from "@/lib/api";
+import styles from "./AdminDashboard.module.css";
 
 const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState({
-    totalRides: 0,
-    activeBookings: 0,
-    pendingDrivers: 0,
-    passengers: 0,
-  });
-
-  const [ridesTableData, setRidesTableData] = useState<any[]>([]);
+  const [refundRequests, setRefundRequests] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [ridesTableData, setRidesTableData] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loadingRefundId, setLoadingRefundId] = useState<string | null>(null);
+  const [updatingRoleId, setUpdatingRoleId] = useState<number | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
+    const token = sessionStorage.getItem("token");
 
     const headers = {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
-    const fetchStats = async () => {
+    const fetchRefundRequests = async () => {
       try {
-        const [ridesRes, bookingsRes, driversRes, passengersRes] = await Promise.all([
-          axios.post('http://localhost:3002/graphql', {
-            query: `query { rides { _id } }`,
+        const [paymentsRes, bookingsRes, usersRes] = await Promise.all([
+          axios.post("http://localhost:3003/graphql", {
+            query: `query { getAllPayments { id bookingId status amount userId } }`
           }, { headers }),
 
-          axios.post('http://localhost:3001/graphql', {
-            query: `query { AllBookings { id } }`,
+          axios.post("http://localhost:3001/graphql", {
+            query: `query { AllBookings { id userId status } }`
           }, { headers }),
 
-          axios.post('http://localhost:3000/graphql', {
-            query: `query { getAllDrivers { id } }`,
-          }, { headers }),
-
-          axios.post('http://localhost:3000/graphql', {
-            query: `query { getAllPassengers { id } }`,
-          }, { headers }),
+          axios.post("http://localhost:3000/graphql", {
+            query: `query { getAllUsers { id email universityId role } }`
+          }, { headers })
         ]);
 
-        setStats({
-          totalRides: ridesRes.data.data.rides.length,
-          activeBookings: bookingsRes.data.data.AllBookings.length,
-          pendingDrivers: driversRes.data.data.getAllDrivers.length,
-          passengers: passengersRes.data.data.getAllPassengers.length,
+        const succeededPayments = paymentsRes.data.data.getAllPayments.filter((p: any) => p.status === "succeeded");
+        const cancelledBookings = bookingsRes.data.data.AllBookings.filter((b: any) => b.status === "CANCELLED");
+
+        const matched = succeededPayments.filter((p: any) =>
+          cancelledBookings.find((b: any) => b.id === p.bookingId && b.userId === p.userId)
+        ).map((p: any) => {
+          const user = usersRes.data.data.getAllUsers.find((u: any) => u.id === p.userId);
+          return {
+            userName: user ? user.email : "Unknown",
+            amount: p.amount,
+            paymentId: p.id
+          };
         });
-      } catch (error) {
-        console.error('Failed to fetch admin stats:', error);
+
+        setRefundRequests(matched);
+        setUsers(usersRes.data.data.getAllUsers);
+      } catch (err) {
+        console.error("Error fetching refunds:", err);
       }
     };
 
     const fetchRidesTable = async () => {
       try {
-        const rideRes = await axios.post('http://localhost:3002/graphql', {
+        const rideRes = await axios.post("http://localhost:3002/graphql", {
           query: `
             query {
               rides {
@@ -76,12 +82,11 @@ const AdminDashboard: React.FC = () => {
 
         const enrichedRides = await Promise.all(rides.map(async (ride: any) => {
           try {
-            const driverRes = await axios.post('http://localhost:3000/graphql', {
+            const driverRes = await axios.post("http://localhost:3000/graphql", {
               query: `
                 query GetUserByUuid($id: String!) {
                     getUserByUuid(id: $id) {
-                        firstName
-                        lastName
+                        email
                     }
                 }
               `,
@@ -91,14 +96,14 @@ const AdminDashboard: React.FC = () => {
             const driver = driverRes.data.data.getUserByUuid;
             return {
               ...ride,
-              driverName: driver ? `${driver.firstName} ${driver.lastName}` : 'Unknown',
+              driverName: driver ? driver.email : "Unknown",
               passengers: ride.totalSeats - ride.availableSeats,
             };
           } catch (err) {
             console.warn("Failed to fetch driver info for ride:", ride._id, err);
             return {
               ...ride,
-              driverName: 'Unknown',
+              driverName: "Unknown",
               passengers: ride.totalSeats - ride.availableSeats,
             };
           }
@@ -106,69 +111,86 @@ const AdminDashboard: React.FC = () => {
 
         setRidesTableData(enrichedRides);
       } catch (error) {
-        console.error('Failed to fetch ride data:', error);
+        console.error("Failed to fetch ride data:", error);
       }
     };
 
-    const fetchUsers = async () => {
-      try {
-        const res = await axios.post('http://localhost:3000/graphql', {
-          query: `
-            query {
-              getAllUsers {
-                id
-                firstName
-                lastName
-                universityId
-                role
-                isApproved
-              }
-            }
-          `
-        }, { headers });
-
-        setUsers(res.data.data.getAllUsers);
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-      }
-    };
-
-    fetchStats();
+    fetchRefundRequests();
     fetchRidesTable();
-    fetchUsers();
   }, []);
+
+  const handleRefund = async (paymentId: string) => {
+    try {
+      setLoadingRefundId(paymentId);
+      await refundPayment(paymentId);
+      setRefundRequests((prev) => prev.filter((r) => r.paymentId !== paymentId));
+    } catch (err) {
+      console.error("Refund failed:", err);
+    } finally {
+      setLoadingRefundId(null);
+    }
+  };
+
+  const handleDeleteUser = async (universityId: number) => {
+    try {
+      setDeletingUserId(universityId);
+      await axios.post("http://localhost:3000/graphql", {
+        query: `
+          mutation($universityId: Int!) {
+            deleteUser(universityId: $universityId)
+          }
+        `,
+        variables: { universityId },
+      }, {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+      setUsers((prev) => prev.filter((u) => u.universityId !== universityId));
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
+  const handleChangeRole = async (universityId: number, newRole: string) => {
+    try {
+      setUpdatingRoleId(universityId);
+      await axios.post("http://localhost:3000/graphql", {
+        query: `
+          mutation($universityId: Int!, $role: Role!) {
+            changeUserRole(universityId: $universityId, role: $role) {
+              id
+              role
+            }
+          }
+        `,
+        variables: { universityId, role: newRole },
+      }, {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.universityId === universityId ? { ...u, role: newRole } : u
+        )
+      );
+    } catch (err) {
+      console.error("Failed to change user role:", err);
+    } finally {
+      setUpdatingRoleId(null);
+    }
+  };
 
   return (
     <div>
-      <header className={styles.header}>
-        GIU Admin Dashboard
-      </header>
+      <header className={styles.header}>GIU Admin Dashboard</header>
 
       <div className={styles.container}>
-        {/* Overview */}
-        <section className={styles.section}>
-          <h2>Dashboard Overview</h2>
-          <div className={styles.stats}>
-            <div className={styles.statBox}>
-              <h3>{stats.totalRides}</h3>
-              <p>Total Rides</p>
-            </div>
-            <div className={styles.statBox}>
-              <h3>{stats.activeBookings}</h3>
-              <p>Bookings</p>
-            </div>
-            <div className={styles.statBox}>
-              <h3>{stats.pendingDrivers}</h3>
-              <p>Drivers</p>
-            </div>
-            <div className={styles.statBox}>
-              <h3>{stats.passengers}</h3>
-              <p>Passengers</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Ride Monitoring */}
         <section className={styles.section}>
           <h2>Rides & Bookings</h2>
           <table className={styles.table}>
@@ -195,7 +217,6 @@ const AdminDashboard: React.FC = () => {
           </table>
         </section>
 
-        {/* Payments */}
         <section className={styles.section}>
           <h2>Payments & Refunds</h2>
           <table className={styles.table}>
@@ -208,80 +229,68 @@ const AdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>Menna Ayman</td>
-                <td>50 EGP</td>
-                <td>Refund Request</td>
-                <td><button className={styles.primary}>Issue Refund</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        {/* Complaints */}
-        <section className={styles.section}>
-          <h2>Complaints</h2>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Issue</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Ali Mahmoud</td>
-                <td>Driver didn’t show up</td>
-                <td><span className={`${styles.status} ${styles.pending}`}>Pending</span></td>
-                <td><button className={styles.primary}>Mark as Resolved</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        {/* User Management */}
-        <section className={styles.section}>
-          <h2>Users</h2>
-          <input
-            type="text"
-            placeholder="Search user by name or GIU ID"
-            className={styles.input}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>GIU ID</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Privileges</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users
-                .filter((user) => {
-                  const name = `${user.firstName} ${user.lastName}`.toLowerCase();
-                  const idStr = user.universityId.toString();
-                  return name.includes(searchTerm.toLowerCase()) || idStr.includes(searchTerm);
-                })
-                .map((user) => (
-                  <tr key={user.id}>
-                    <td>{user.firstName} {user.lastName}</td>
-                    <td>GIU{user.universityId}</td>
-                    <td>{user.role.charAt(0) + user.role.slice(1).toLowerCase()}</td>
-                    <td>{user.isApproved ? 'Active' : 'Pending'}</td>
+              {refundRequests.length === 0 ? (
+                <tr><td colSpan={4}>No refund requests</td></tr>
+              ) : (
+                refundRequests.map((r) => (
+                  <tr key={r.paymentId}>
+                    <td>{r.userName}</td>
+                    <td>{r.amount} EGP</td>
+                    <td>Refund Request</td>
                     <td>
-                      <button className={styles.primary}>Block</button>
-                      {user.role !== 'ADMIN' && (
-                        <button className={styles.secondary}>Make Admin</button>
-                      )}
+                      <button
+                        className={styles.primary}
+                        onClick={() => handleRefund(r.paymentId)}
+                        disabled={loadingRefundId === r.paymentId}
+                      >
+                        {loadingRefundId === r.paymentId ? "Processing..." : "Issue Refund"}
+                      </button>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        <section className={styles.section}>
+          <h2>All Users</h2>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>University ID</th>
+                <th>Role</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td>{user.email}</td>
+                  <td>{user.universityId}</td>
+                  <td>
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleChangeRole(user.universityId, e.target.value)}
+                      disabled={updatingRoleId === user.universityId}
+                    >
+                      <option value="PASSENGER">PASSENGER</option>
+                      <option value="DRIVER">DRIVER</option>
+                      <option value="ADMIN">ADMIN</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      className={styles.secondary}
+                      onClick={() => handleDeleteUser(user.universityId)}
+                      disabled={deletingUserId === user.universityId}
+                    >
+                      {deletingUserId === user.universityId ? "Deleting..." : "Delete"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </section>

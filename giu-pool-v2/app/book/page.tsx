@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import axios from "axios";
+import { getMyBookedRideIds } from "@/lib/api";
 
 // Define types for ride data
 interface Ride {
@@ -188,8 +189,9 @@ export default function BookRidePage() {
             };
           })
         );
-        console.log("Mapped rides with enhanced stops:", mappedRides);
-        setRides(mappedRides);
+        const bookedRideIds = await getMyBookedRideIds(token);
+const filteredRides = mappedRides.filter((ride: Ride) => !bookedRideIds.includes(ride.id));
+setRides(filteredRides);
       } else {
         console.error("No rides found or error in response:", response.data);
       }
@@ -206,9 +208,11 @@ export default function BookRidePage() {
   };
 
   // Book a ride
-  const bookRide = (rideId: string) => {
-    console.log("Booking ride with ID:", rideId);
-  };
+const bookRide = (rideId: string) => {
+  console.log("Booking ride with ID:", rideId);
+  router.push(`/payment?rideId=${rideId}`);
+};
+
 
   const fetchStopName = async (stopId: string) => {
     try {
@@ -411,4 +415,3 @@ export default function BookRidePage() {
     </div>
   );
 }
-

@@ -17,17 +17,60 @@ export interface UserStats {
 
 // Ride related types
 export interface Ride {
-  id: string
-  from: string
-  to: string
-  date: string
-  time: string
-  price: number
-  availableSeats: number
-  girlsOnly: boolean
-  status: "active" | "completed" | "cancelled"
-  driverId: string
-  passengers: string[]
+  _id: string;
+  startLocation: string;
+  endLocation: string;
+  departureTime: string;
+  status: string;
+  totalSeats: number;
+  availableSeats: number;
+  pricePerSeat: number;
+  girlsOnly: boolean;
+  driverId: string;
+  stops: RideStop[];
+}
+
+
+export interface RideStop {
+  stopId: string;
+  location: string;
+  sequence: number;
+  latitude: number;
+  longitude: number;
+}
+
+export enum BookingStatus {
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED"
+}
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  gender?: string;
+  phoneNumber?: number;
+  role: string;
+  universityId: number;
+}
+
+export interface Booking {
+  id: string;
+  userId: string;
+  rideId: string;
+  status: BookingStatus;
+  pickupStopId?: string;
+  dropoffStopId?: string;
+  pickupLocation: string;
+  dropoffLocation: string;
+  price?: number;
+  createdAt: string;
+  updatedAt: string;
+  user?: UserInfo;
+  passengerId?: string;
 }
 
 export interface RideFilters {
@@ -38,6 +81,26 @@ export interface RideFilters {
 }
 
 // Form types
+export interface RideStopInput {
+  stopId: string;
+  location: string;
+  latitude: number;
+  longitude: number;
+  sequence: number;
+}
+
+export interface CreateRideInput {
+  stops: RideStopInput[];
+  departureTime: Date;
+  totalSeats: number;
+  availableSeats: number;
+  pricePerSeat: number;
+  priceScale?: number;
+  girlsOnly?: boolean;
+  startLocation: string;
+  endLocation: string;
+}
+
 export interface CreateRideForm {
   from: string
   to: string
@@ -55,4 +118,3 @@ export interface BookRideForm {
   time: string
   girlsOnly: boolean
 }
-

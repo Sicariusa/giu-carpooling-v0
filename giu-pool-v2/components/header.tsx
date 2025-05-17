@@ -22,7 +22,7 @@ export function Header() {
       }
 
       try {
-        const userResponse = await axios.post(
+        const res = await axios.post(
           "http://localhost:3000/graphql",
           {
             query: `
@@ -36,9 +36,14 @@ export function Header() {
               }
             `,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
-        const userData: User = userResponse.data.data.getUserByToken;
+        const userData: User = res.data.data.getUserByToken;
         setUser(userData);
         setIsLoggedIn(true);
       } catch (error) {
@@ -49,11 +54,10 @@ export function Header() {
 
     fetchUserData();
 
-    // Listen for custom event to update login state dynamically
     const handleLoginStatusChange = () => {
-      const updatedToken = sessionStorage.getItem("token");
-      setIsLoggedIn(!!updatedToken);
-      if (updatedToken) {
+      const token = sessionStorage.getItem("token");
+      setIsLoggedIn(!!token);
+      if (token) {
         fetchUserData();
       } else {
         setUser(null);
@@ -61,61 +65,64 @@ export function Header() {
     };
 
     window.addEventListener("userLoginStatusChanged", handleLoginStatusChange);
-
-    return () => {
-      window.removeEventListener("userLoginStatusChanged", handleLoginStatusChange);
-    };
+    return () => window.removeEventListener("userLoginStatusChanged", handleLoginStatusChange);
   }, [setIsLoggedIn]);
 
   const handleLogout = () => {
-    // Clear the token from sessionStorage and redirect to the home page
     sessionStorage.removeItem("token");
     setIsLoggedIn(false);
-
-    // Dispatch custom event to notify other components
     window.dispatchEvent(new Event("userLoginStatusChanged"));
-
     router.push("/");
   };
 
   return (
-    <header className="border-b">
+    <header className="border-b bg-white shadow-sm">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="flex items-center">
-            <span className="text-2xl font-bold">G</span>
-            <span className="text-2xl font-bold text-giu-red">I</span>
-            <span className="text-2xl font-bold text-giu-gold">U</span>
-            <span className="ml-2 hidden text-sm font-medium sm:block">Pool</span>
-          </div>
+          <span className="text-2xl font-bold">G</span>
+          <span className="text-2xl font-bold text-giu-red">I</span>
+          <span className="text-2xl font-bold text-giu-gold">U</span>
+          <span className="ml-2 hidden text-sm font-medium sm:block">Pool</span>
         </Link>
-        <nav className="flex items-center space-x-6">
+
+        <nav className="flex items-center space-x-4">
           {isLoggedIn && user ? (
             <>
               <Link
                 href={`/dashboard/${user.role.toLowerCase()}`}
-                className="text-sm font-medium text-muted-foreground hover:text-primary"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition"
               >
                 Dashboard
               </Link>
+
+              {user.role === "PASSENGER" && (
+                <Link
+                  href="/book"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+                >
+                  Book a Ride
+                </Link>
+              )}
+
+              {user.role === "DRIVER" && (
+                <Link
+                  href="/offer"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+                >
+                  Offer a Ride
+                </Link>
+              )}
+
               <Link
-                href="/book"
-                className="text-sm font-medium text-muted-foreground hover:text-primary"
+                href="/profile"
+                className="text-muted-foreground hover:text-primary transition"
               >
-                Book a Ride
+                <FaUserCircle size={22} />
               </Link>
-              <Link
-                href="/offer"
-                className="text-sm font-medium text-muted-foreground hover:text-primary"
-              >
-                Offer a Ride
-              </Link>
-              <Link href="/profile" className="text-muted-foreground hover:text-primary">
-                <FaUserCircle size={24} />
-              </Link>
+
               <button
-                className="bg-giu-red hover:bg-giu-red/90 text-white px-4 py-2 rounded"
                 onClick={handleLogout}
+                className="text-sm px-4 py-1.5 rounded bg-giu-red text-white hover:bg-giu-red/90 transition"
               >
                 Log Out
               </button>
@@ -123,12 +130,12 @@ export function Header() {
           ) : (
             <>
               <Link href="/sign-in">
-                <button className="bg-giu-red hover:bg-giu-red/90 text-white px-4 py-2 rounded">
+                <button className="text-sm px-4 py-1.5 rounded bg-giu-red text-white hover:bg-giu-red/90 transition">
                   Sign In
                 </button>
               </Link>
               <Link href="/sign-up">
-                <button className="bg-giu-gold hover:bg-giu-gold/90 text-white px-4 py-2 rounded">
+                <button className="text-sm px-4 py-1.5 rounded bg-giu-gold text-white hover:bg-giu-gold/90 transition">
                   Sign Up
                 </button>
               </Link>
