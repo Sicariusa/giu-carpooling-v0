@@ -95,14 +95,16 @@ export function Header() {
                 Dashboard
               </Link>
 
-              <Link
-                href="/book"
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition"
-              >
-                Book a Ride
-              </Link>
+              {user.role === "PASSENGER" && (
+                <Link
+                  href="/book"
+                  className="text-sm font-medium text-muted-foreground hover:text-primary transition"
+                >
+                  Book a Ride
+                </Link>
+              )}
 
-              {user.role !== "PASSENGER" && (
+              {user.role === "DRIVER" && (
                 <Link
                   href="/offer"
                   className="text-sm font-medium text-muted-foreground hover:text-primary transition"

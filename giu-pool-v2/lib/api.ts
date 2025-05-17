@@ -5,7 +5,7 @@ const RIDE_SERVICE_URL = process.env.NEXT_PUBLIC_RIDE_SERVICE_URL || 'http://loc
 const BOOKING_SERVICE_URL = process.env.NEXT_PUBLIC_BOOKING_SERVICE_URL || 'http://localhost:3001/graphql';
 
 const getTokenHeader = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+  const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : '';
   return {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
@@ -132,7 +132,8 @@ export async function getUserRides(userId: string) {
 
 
 // lib/api.ts
-export async function getRideById(rideId: string, token: string) {
+
+export async function getRideById(rideId: string, token: string): Promise<Ride> {
   const response = await fetch("http://localhost:3002/graphql", {
     method: "POST",
     headers: {
@@ -149,6 +150,9 @@ export async function getRideById(rideId: string, token: string) {
             departureTime
             pricePerSeat
             availableSeats
+            totalSeats
+            driverId
+            girlsOnly
             status
             stops {
               stopId
@@ -171,18 +175,16 @@ export async function getRideById(rideId: string, token: string) {
   if (!ride) throw new Error("Ride not found");
 
   return {
-    id: ride._id,
-    from: ride.startLocation,
-    to: ride.endLocation,
-    date: ride.departureTime.split("T")[0],
-    time: ride.departureTime.split("T")[1]?.substring(0, 5),
-    price: ride.pricePerSeat,
+    _id: ride._id,
+    startLocation: ride.startLocation,
+    endLocation: ride.endLocation,
+    departureTime: ride.departureTime,
+    pricePerSeat: ride.pricePerSeat,
     availableSeats: ride.availableSeats,
-    totalSeats: ride.totalSeats ?? 0,
-    girlsOnly: false,
+    totalSeats: ride.totalSeats ?? ride.availableSeats,
+    girlsOnly: ride.girlsOnly ?? false,
     status: ride.status,
-    driverId: "",
-    passengers: [],
+    driverId: ride.driverId ?? "",
     stops: ride.stops ?? [],
   };
 }
@@ -312,5 +314,164 @@ export async function getMyBookedRideIds(token: string): Promise<string[]> {
   return data.data?.MyBookings?.map((b: any) => b.rideId) || [];
 }
 
+export async function cancelBooking(bookingId: string) {
+  const res = await fetch("http://localhost:3001/graphql", {
+    method: "POST",
+    headers: getTokenHeader(),
+    body: JSON.stringify({
+      query: `
+        mutation($id: ID!) {
+          cancelBooking(id: $id) {
+            id
+            status
+          }
+        }
+      `,
+      variables: { id: bookingId },
+    }),
+  });
+
+  const data = await res.json();
+
+  if (data.errors) {
+    console.error("🚨 GraphQL Error:", data.errors);
+    throw new Error(data.errors[0]?.message || "Cancellation failed");
+  }
+
+  if (!data.data?.cancelBooking) {
+    throw new Error("No response from cancelBooking");
+  }
+
+  return data.data.cancelBooking;
+}
+
+
+export async function cancelRide(rideId: string) {
+  const res = await fetch("http://localhost:3002/graphql", {
+    method: "POST",
+    headers: getTokenHeader(),
+    body: JSON.stringify({
+      query: `
+        mutation($id: ID!) {
+          cancelRide(id: $id) {
+            id: _id
+            status
+          }
+        }
+      `,
+      variables: { id: rideId },
+    }),
+  });
+
+  const data = await res.json();
+  return data.data.cancelRide;
+}
+
+export async function refundPayment(paymentId: string) {
+  const res = await fetch("http://localhost:3003/graphql", {
+    method: "POST",
+    headers: getTokenHeader(),
+    body: JSON.stringify({
+      query: `
+        mutation($id: ID!) {
+          refundPayment(id: $id) {
+            id
+            status
+          }
+        }
+      `,
+      variables: { id: paymentId },
+    }),
+  });
+
+  const data = await res.json();
+  return data.data.refundPayment;
+}
+
+// export async function getPaymentByBookingId(bookingId: string) {
+//   const res = await fetch("http://localhost:3003/graphql", {
+//     method: "POST",
+//     headers: getTokenHeader(),
+//     body: JSON.stringify({
+//       query: `
+//         query($id: ID!) {
+//           getPaymentById(id: $id) {
+//             id
+//             bookingId
+//             amount
+//             currency
+//             status
+//             paymentIntentId
+//             clientSecret
+//           }
+//         }
+//       `,
+//       variables: { id: bookingId },
+//     }),
+// //   });
+
+//   const data = await res.json();
+
+//   if (data.errors || !data.data?.getPaymentById) {
+//     console.warn("No payment found or unauthorized:", data.errors);
+//     return null;
+//   }
+
+//   return data.data.getPaymentById;
+// }
+
+export async function getMyPayments() {
+  const res = await fetch("http://localhost:3003/graphql", {
+    method: "POST",
+    headers: getTokenHeader(),
+    body: JSON.stringify({
+      query: `
+        query {
+          getMyPayments {
+            id
+            bookingId
+            amount
+            currency
+            status
+            paymentIntentId
+            clientSecret
+            createdAt
+          }
+        }
+      `
+    }),
+  });
+
+  const data = await res.json();
+  return data.data.getMyPayments;
+}
+
+export async function getPaymentByBooking(bookingId: string) {
+  const res = await fetch("http://localhost:3003/graphql", {
+    method: "POST",
+    headers: getTokenHeader(),
+    body: JSON.stringify({
+      query: `
+        query($bookingId: ID!) {
+          getPaymentByBooking(bookingId: $bookingId) {
+            id
+            status
+            bookingId
+          }
+        }
+      `,
+      variables: { bookingId },
+    }),
+  });
+
+  const data = await res.json();
+
+  if (data.errors || !data.data?.getPaymentByBooking) {
+    console.warn("No payment found or unauthorized:", data.errors);
+    return null;
+  }
+
+  return data.data.getPaymentByBooking;
+}
 
 

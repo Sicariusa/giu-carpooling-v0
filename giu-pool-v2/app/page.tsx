@@ -1,11 +1,16 @@
-import { Shield, Users2, Clock, Car } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+"use client";
+
+import { Shield, Users2, Clock, Car } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useUser } from "@/app/utils/UserContext";
 
 export default function Home() {
+  const { isLoggedIn } = useUser();
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
-     <section className="flex-1 space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-16">
+      <section className="flex-1 space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-16">
         <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
           <span className="rounded-2xl bg-giu-gold/10 px-4 py-1.5 text-sm font-medium text-emerald-800">
             GIU Students & Staff Only
@@ -18,14 +23,16 @@ export default function Home() {
           <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
             Share rides with your fellow GIU community members. Save money, reduce emissions, and travel safely.
           </p>
-          <div className="space-x-4">
-            <Button asChild size="lg" className="bg-giu-red hover:bg-giu-red/90">
-              <Link href="/book">Find a Ride</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <Link href="/offer">Offer a Ride</Link>
-            </Button>
-          </div>
+          {isLoggedIn && (
+            <div className="space-x-4">
+              <Button asChild size="lg" className="bg-giu-red hover:bg-giu-red/90">
+                <Link href="/book">Find a Ride</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/offer">Offer a Ride</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -70,6 +77,5 @@ export default function Home() {
         </div>
       </section>
     </div>
-  )
+  );
 }
-

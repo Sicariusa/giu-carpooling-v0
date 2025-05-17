@@ -28,6 +28,7 @@ export interface Ride {
   priceScale?: number;
   girlsOnly: boolean;
   stops: RideStop[];
+  driverId?: string;
 }
 
 export interface RideStop {

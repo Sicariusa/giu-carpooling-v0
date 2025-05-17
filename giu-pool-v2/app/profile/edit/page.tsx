@@ -9,9 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 export default function EditProfilePage() {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [universityId, setUniversityId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState("");
   const router = useRouter();
@@ -27,9 +28,8 @@ export default function EditProfilePage() {
           query: `
             query {
               getUserByToken {
-                firstName
-                lastName
                 email
+                universityId
               }
             }
           `,
@@ -43,9 +43,8 @@ export default function EditProfilePage() {
       )
       .then((res) => {
         const user = res.data?.data?.getUserByToken;
-        setFirstName(user.firstName);
-        setLastName(user.lastName);
         setEmail(user.email);
+        setUniversityId(user.universityId);
       })
       .catch((err) => {
         console.error(err);
@@ -57,23 +56,41 @@ export default function EditProfilePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = sessionStorage.getItem("token");
-    if (!token) return;
+    if (!token || !universityId) return;
+
+    // Input validation
+    const phoneRegex = /^\d{11}$/;
+    const passwordRegex = /^(?=(?:.*\d){3,}).{4,}$/;
+
+    if (phoneNumber && !phoneRegex.test(phoneNumber)) {
+      setFeedback("Phone number must be exactly 11 digits.");
+      return;
+    }
+
+    if (password && !passwordRegex.test(password)) {
+      setFeedback("Password must be at least 4 characters long and contain at least 3 digits.");
+      return;
+    }
 
     try {
       const response = await axios.post(
         "http://localhost:3000/graphql",
         {
           query: `
-            mutation UpdateUser($firstName: String!, $lastName: String!, $email: String!) {
-              updateUser(firstName: $firstName, lastName: $lastName, email: $email) {
+            mutation($universityId: Int!, $input: UpdateUserInput!) {
+              updateUser(universityId: $universityId, input: $input) {
                 id
-                firstName
-                lastName
                 email
               }
             }
           `,
-          variables: { firstName, lastName, email },
+          variables: {
+            universityId,
+            input: {
+              phoneNumber: phoneNumber ? parseInt(phoneNumber) : undefined,
+              password: password || undefined,
+            },
+          },
         },
         {
           headers: {
@@ -102,44 +119,36 @@ export default function EditProfilePage() {
         <CardContent className="p-6 space-y-6">
           <h2 className="text-xl font-bold">Edit Profile</h2>
 
-          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded text-sm border border-yellow-300">
-            ⚠️ Edit profile functionality is <strong>not working yet</strong>. You can view and test the form UI.
-          </div>
-
           {loading ? (
             <p>Loading...</p>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="phoneNumber">Phone Number</Label>
                 <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  required
+                  id="phoneNumber"
+                  type="text"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="password">New Password</Label>
                 <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  required
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Leave blank to keep current"
                 />
               </div>
 
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  To change your email, please request support.
+                <Label>Email</Label>
+                <Input id="email" value={email} disabled />
+                <p className="text-xs text-muted-foreground mt-1 italic">
+                  Email is locked. Please contact support to change it.
                 </p>
               </div>
 
