@@ -25,6 +25,7 @@ export interface Ride {
   totalSeats: number;
   availableSeats: number;
   pricePerSeat: number;
+  priceScale?: number;
   girlsOnly: boolean;
   stops: RideStop[];
 }

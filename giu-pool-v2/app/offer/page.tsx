@@ -417,24 +417,6 @@ export default function OfferRidePage() {
                               onSelect={() => {
                                 setOrigin(stop.name);
                                 setSelectedOriginStop(stop);
-                                // Set this stop as the first stop in the sequence
-                                if (!stop.name) {
-                                  console.error("Stop name is required");
-                                  return;
-                                }
-                                const newStop: RideStopInput = {
-                                  stopId: stop._id,
-                                  location: stop.name,
-                                  latitude: stop.latitude,
-                                  longitude: stop.longitude,
-                                  sequence: 1
-                                };
-                                // Update existing stops to have incremented sequence numbers
-                                const updatedStops = [newStop, ...stops.map((s, index) => ({
-                                  ...s,
-                                  sequence: index + 2
-                                }))];
-                                setStops(updatedStops);
                                 setOriginPopoverOpen(false);
                               }}
                               className="flex flex-col items-start py-2"
