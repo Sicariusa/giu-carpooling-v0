@@ -120,8 +120,7 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push("/profile/edit")}>
-              <Settings className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push("/profile/edit")}>  <Settings className="h-4 w-4" />
               Edit Profile
             </Button>
           </div>
@@ -152,9 +151,7 @@ export default function ProfilePage() {
       <Tabs defaultValue="history">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="history">Ride History</TabsTrigger>
-          {user.role === "DRIVER" && (
-            <TabsTrigger value="offered">Offered Rides</TabsTrigger>
-          )}
+          <TabsTrigger value="offered">Offered Rides</TabsTrigger>
         </TabsList>
 
         <TabsContent value="history" className="space-y-4 mt-4">
@@ -183,11 +180,13 @@ export default function ProfilePage() {
           )}
         </TabsContent>
 
-        {user.role === "DRIVER" && (
-          <TabsContent value="offered" className="mt-4">
+        <TabsContent value="offered" className="mt-4">
+          {user.role === "DRIVER" ? (
             <p className="text-muted-foreground">Coming soon: Offered ride history.</p>
-          </TabsContent>
-        )}
+          ) : (
+            <p className="text-muted-foreground">Only drivers can offer rides.</p>
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );

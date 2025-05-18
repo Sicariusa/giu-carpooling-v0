@@ -9,8 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 export default function EditProfilePage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [universityId, setUniversityId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,8 @@ export default function EditProfilePage() {
               getUserByToken {
                 email
                 universityId
+                firstName
+                lastName
               }
             }
           `,
@@ -45,6 +48,8 @@ export default function EditProfilePage() {
         const user = res.data?.data?.getUserByToken;
         setEmail(user.email);
         setUniversityId(user.universityId);
+        setFirstName(user.firstName);
+        setLastName(user.lastName);
       })
       .catch((err) => {
         console.error(err);
@@ -58,17 +63,9 @@ export default function EditProfilePage() {
     const token = sessionStorage.getItem("token");
     if (!token || !universityId) return;
 
-    // Input validation
     const phoneRegex = /^\d{11}$/;
-    const passwordRegex = /^(?=(?:.*\d){3,}).{4,}$/;
-
     if (phoneNumber && !phoneRegex.test(phoneNumber)) {
       setFeedback("Phone number must be exactly 11 digits.");
-      return;
-    }
-
-    if (password && !passwordRegex.test(password)) {
-      setFeedback("Password must be at least 4 characters long and contain at least 3 digits.");
       return;
     }
 
@@ -87,8 +84,9 @@ export default function EditProfilePage() {
           variables: {
             universityId,
             input: {
+              firstName,
+              lastName,
               phoneNumber: phoneNumber ? parseInt(phoneNumber) : undefined,
-              password: password || undefined,
             },
           },
         },
@@ -124,23 +122,32 @@ export default function EditProfilePage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="phoneNumber">Phone Number</Label>
                 <Input
                   id="phoneNumber"
                   type="text"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="password">New Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Leave blank to keep current"
                 />
               </div>
 

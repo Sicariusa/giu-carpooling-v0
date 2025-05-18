@@ -40,11 +40,18 @@ const AdminDashboard: React.FC = () => {
 
         const succeededPayments = paymentsRes.data.data.getAllPayments.filter((p: any) => p.status === "succeeded");
         const cancelledBookings = bookingsRes.data.data.AllBookings.filter((b: any) => b.status === "CANCELLED");
+console.log("usersRes", usersRes);
+console.log("usersRes.data", usersRes.data);
+console.log("usersRes.data.data", usersRes.data.data);
 
         const matched = succeededPayments.filter((p: any) =>
           cancelledBookings.find((b: any) => b.id === p.bookingId && b.userId === p.userId)
+        
         ).map((p: any) => {
-          const user = usersRes.data.data.getAllUsers.find((u: any) => u.id === p.userId);
+          const allUsers = usersRes.data?.data?.getAllUsers ?? [];
+          const user = allUsers.find((u: any) => u.id === p.userId);
+
+
           return {
             userName: user ? user.email : "Unknown",
             amount: p.amount,
@@ -53,6 +60,7 @@ const AdminDashboard: React.FC = () => {
         });
 
         setRefundRequests(matched);
+        
         setUsers(usersRes.data.data.getAllUsers);
       } catch (err) {
         console.error("Error fetching refunds:", err);

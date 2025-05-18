@@ -7,20 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [universityId, setUniversityId] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [formData, setFormData] = useState({
+    universityId: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    gender: ""
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
   const validateInputs = () => {
+    const { universityId, email, password, confirmPassword, firstName, lastName, gender, phoneNumber } = formData;
+    
     if (!universityId || isNaN(Number(universityId))) {
       setError("University ID must be a valid number.");
       return false;
@@ -45,6 +56,10 @@ export default function SignUpPage() {
       setError("Last name is required.");
       return false;
     }
+    if (!gender) {
+      setError("Gender is required.");
+      return false;
+    }
     if (phoneNumber && isNaN(Number(phoneNumber))) {
       setError("Phone number must be a valid number.");
       return false;
@@ -52,10 +67,10 @@ export default function SignUpPage() {
     return true;
   };
 
+  const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+
   const handleSignUp = async () => {
-    if (!validateInputs()) {
-      return;
-    }
+    if (!validateInputs()) return;
 
     try {
       const response = await axios.post("http://localhost:3000/graphql", {
@@ -71,28 +86,25 @@ export default function SignUpPage() {
         `,
         variables: {
           input: {
-            universityId: parseInt(universityId, 10),
-            email,
-            password,
-            firstName,
-            lastName,
-            phoneNumber: phoneNumber ? parseInt(phoneNumber, 10) : null,
+            universityId: parseInt(formData.universityId, 10),
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            gender: capitalize(formData.gender),
+            phoneNumber: formData.phoneNumber ? parseInt(formData.phoneNumber, 10) : null,
           },
         },
       });
 
-      const result = response.data;
-
-      if (result.data?.registerUser) {
+      if (response.data.data?.registerUser) {
         setSuccess("Sign-up successful! Redirecting to OTP verification...");
         setError("");
         setTimeout(() => {
-          router.push(
-            `/verify-otp?email=${encodeURIComponent(email)}`
-          );
+          router.push(`/verify-otp?email=${encodeURIComponent(formData.email)}`);
         }, 2000);
       } else {
-        setError(result.errors?.[0]?.message || "Sign-up failed");
+        setError(response.data.errors?.[0]?.message || "Sign-up failed");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -100,86 +112,116 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="container max-w-md py-16">
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Sign Up</CardTitle>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
+      <Card className="w-full max-w-md border-none shadow-lg">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-giu-gold/10 mb-4">
+            <span className="text-2xl font-bold text-giu-gold">G</span>
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-800">Create Your Account</CardTitle>
+          <p className="text-sm text-gray-500">Join the GIU carpooling community</p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-gray-700">First Name</Label>
+              <Input
+                id="firstName"
+                placeholder="John"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="focus:ring-2 focus:ring-giu-gold"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-gray-700">Last Name</Label>
+              <Input
+                id="lastName"
+                placeholder="Doe"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="focus:ring-2 focus:ring-giu-gold"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="GIU id">GIU ID</Label>
+            <Label htmlFor="universityId" className="text-gray-700">GIU ID</Label>
             <Input
-              id="ID"
-              type="text"
-              placeholder="Enter your GIU ID"
-              value={universityId}
-              onChange={(e) => setUniversityId(e.target.value)}
+              id="universityId"
+              placeholder="123456"
+              value={formData.universityId}
+              onChange={handleChange}
+              className="focus:ring-2 focus:ring-giu-gold"
             />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-gray-700">Email</Label>
             <Input
               id="email"
               type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="john.doe@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              className="focus:ring-2 focus:ring-giu-gold"
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                className="focus:ring-2 focus:ring-giu-gold"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-gray-700">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className="focus:ring-2 focus:ring-giu-gold"
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Label htmlFor="gender" className="text-gray-700">Gender</Label>
+            <Select value={formData.gender} onValueChange={(value) => setFormData({...formData, gender: value})}>
+              <SelectTrigger className="focus:ring-2 focus:ring-giu-gold">
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Label htmlFor="phoneNumber" className="text-gray-700">Phone Number (Optional)</Label>
             <Input
-              id="confirm-password"
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              id="phoneNumber"
+              placeholder="01234567890"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className="focus:ring-2 focus:ring-giu-gold"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="first-name">First Name</Label>
-            <Input
-              id="first-name"
-              type="text"
-              placeholder="Enter your first name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="last-name">Last Name</Label>
-            <Input
-              id="last-name"
-              type="text"
-              placeholder="Enter your last name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone-number">Phone Number (Optional)</Label>
-            <Input
-              id="phone-number"
-              type="text"
-              placeholder="Enter your phone number"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-          </div>
-          {error && <p className="text-red-500">{error}</p>}
-          {success && <p className="text-green-500">{success}</p>}
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {success && <p className="text-green-500 text-sm">{success}</p>}
+
           <Button
-            className="w-full bg-emerald-400 hover:bg-emerald-500"
+            className="w-full bg-giu-red hover:bg-giu-red/90 transition-colors shadow-md"
             onClick={handleSignUp}
           >
             Sign Up

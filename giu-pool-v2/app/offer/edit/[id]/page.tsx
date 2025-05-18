@@ -389,10 +389,10 @@ export default function EditRidePage({ params }: { params: { id: string } }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!hasUnsavedChanges) {
-      toast.info("No changes to save");
-      return;
-    }
+    // if (!hasUnsavedChanges) {
+    //   toast.info("No changes to save");
+    //   return;
+    // }
 
     const formData = new FormData(e.target as HTMLFormElement);
     
@@ -698,10 +698,17 @@ export default function EditRidePage({ params }: { params: { id: string } }) {
             <Button 
               type="submit" 
               className="w-full bg-giu-red hover:bg-giu-red/90"
-              disabled={!hasUnsavedChanges}
+              //disabled={!hasUnsavedChanges}
+            >
+              Save Changes
+            </Button>
+            {/* <Button 
+              type="submit" 
+              className="w-full bg-giu-red hover:bg-giu-red/90"
+              //disabled={!hasUnsavedChanges}
             >
               {hasUnsavedChanges ? "Save Changes" : "No Changes to Save"}
-            </Button>
+            </Button> */}
           </CardContent>
         </Card>
       </form>
